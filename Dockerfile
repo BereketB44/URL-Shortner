@@ -1,16 +1,12 @@
-# Use a lightweight OpenJDK 17 base image
-FROM openjdk:17-jdk-alpine
-
-# Set the working directory inside the container
+# Stage 1: Build the JAR
+FROM maven:3.9.4-eclipse-temurin-17 as builder
 WORKDIR /app
+COPY . .
+RUN mvn clean package -DskipTests
 
-# Copy the built Spring Boot JAR file into the container
-# Assuming the JAR is in 'target' and named 'your-app-name.jar' after building
-# ***IMPORTANT: Replace 'your-app-name.jar' with the actual name of your JAR file***
-COPY target/PorchPick-0.0.1-SNAPSHOT.jar app.jar
-
-# Expose the port your Spring Boot app listens on (default is 8080)
+# Stage 2: Run the JAR
+FROM openjdk:17-jdk-alpine
+WORKDIR /app
+COPY --from=builder /app/target/PorchPick-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
-
-# Command to run the Spring Boot application when the container starts
 ENTRYPOINT ["java", "-jar", "app.jar"]
