@@ -38,7 +38,7 @@ public class AuthControllerTest {
     private AuthController authController;
 
     private AuthRequestDto authRequestDto;
-    private AuthResponseDto authResponseDto;
+    private AuthResponseDto loginResponseDto;
 
     @BeforeEach
     void setUp() {
@@ -47,20 +47,32 @@ public class AuthControllerTest {
                 .build();
 
         authRequestDto = new AuthRequestDto("test@example.com", "password123");
-        authResponseDto = new AuthResponseDto(UUID.randomUUID(), "test@example.com");
+        
+        loginResponseDto = AuthResponseDto.builder()
+                .success(true)
+                .message("Login successful.")
+                .id(UUID.randomUUID())
+                .email("test@example.com")
+                .token("some.jwt.token")
+                .build();
     }
 
     @Test
     @DisplayName("POST /auth/signup - Success")
     void givenValidSignupRequest_whenSignup_thenReturnsCreated() throws Exception {
-        when(authService.signup(any(AuthRequestDto.class))).thenReturn(authResponseDto);
+        AuthResponseDto signupResponse = AuthResponseDto.builder()
+                .success(true)
+                .message("User registered successfully. Please login.")
+                .build();
+
+        when(authService.signup(any(AuthRequestDto.class))).thenReturn(signupResponse);
 
         mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authRequestDto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(authResponseDto.getId().toString()))
-                .andExpect(jsonPath("$.email").value(authResponseDto.getEmail()));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("User registered successfully. Please login."));
     }
 
     @Test
@@ -78,14 +90,17 @@ public class AuthControllerTest {
     @Test
     @DisplayName("POST /auth/login - Success")
     void givenValidLoginRequest_whenLogin_thenReturnsOk() throws Exception {
-        when(authService.login(any(AuthRequestDto.class))).thenReturn(authResponseDto);
+        when(authService.login(any(AuthRequestDto.class))).thenReturn(loginResponseDto);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authRequestDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(authResponseDto.getId().toString()))
-                .andExpect(jsonPath("$.email").value(authResponseDto.getEmail()));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Login successful."))
+                .andExpect(jsonPath("$.id").value(loginResponseDto.getId().toString()))
+                .andExpect(jsonPath("$.email").value(loginResponseDto.getEmail()))
+                .andExpect(jsonPath("$.token").value(loginResponseDto.getToken()));
     }
 
     @Test

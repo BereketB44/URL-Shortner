@@ -13,6 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/users/{userId}/profile")
+@CrossOrigin("*")
 public class ProfileController {
 
     @Autowired
@@ -21,7 +22,7 @@ public class ProfileController {
     @PostMapping
     public ResponseEntity<ProfileResponseDto> createProfile(@PathVariable UUID userId, @Valid @RequestBody ProfileRequestDto profileRequestDto) {
         ProfileResponseDto createdProfile = profileService.createProfile(userId, profileRequestDto);
-        return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdProfile);
     }
 
     @GetMapping
@@ -33,6 +34,6 @@ public class ProfileController {
     @PutMapping
     public ResponseEntity<ProfileResponseDto> updateProfile(@PathVariable UUID userId, @Valid @RequestBody ProfileRequestDto profileRequestDto) {
         ProfileResponseDto updatedProfile = profileService.updateProfile(userId, profileRequestDto);
-        return ResponseEntity.ok(updatedProfile);
+        return ResponseEntity.accepted().body(updatedProfile);
     }
 }

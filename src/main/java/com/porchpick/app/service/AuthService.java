@@ -2,13 +2,18 @@ package com.porchpick.app.service;
 
 import com.porchpick.app.dto.AuthRequestDto;
 import com.porchpick.app.dto.AuthResponseDto;
+import com.porchpick.app.exception.ResourceNotFoundException;
+import com.porchpick.app.model.Profile;
 import com.porchpick.app.model.User;
 import com.porchpick.app.repository.UserRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class AuthService implements IAuthService {
 
     @Autowired
@@ -16,6 +21,12 @@ public class AuthService implements IAuthService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public AuthResponseDto signup(AuthRequestDto authRequestDto) {
@@ -29,10 +40,13 @@ public class AuthService implements IAuthService {
                 .email(authRequestDto.getEmail())
                 .passwordHash(hashedPassword)
                 .build();
+        
+        userRepository.save(user);
 
-        User savedUser = userRepository.save(user);
-
-        return new AuthResponseDto(savedUser.getId(), savedUser.getEmail());
+        return AuthResponseDto.builder()
+                .success(true)
+                .message("User registered successfully. Please login.")
+                .build();
     }
 
     @Override
@@ -44,6 +58,14 @@ public class AuthService implements IAuthService {
             throw new RuntimeException("Invalid email or password.");
         }
 
-        return new AuthResponseDto(user.getId(), user.getEmail());
+        String token = jwtService.generateToken(user.getId());
+
+        return AuthResponseDto.builder()
+                .success(true)
+                .message("Login successful.")
+                .id(user.getId())
+                .email(user.getEmail())
+                .token(token)
+                .build();
     }
 } 
